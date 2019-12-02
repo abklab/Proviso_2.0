@@ -153,7 +153,7 @@ namespace BalanceQueryAPI.DAL
         }
 
         //Verify apikey
-        public bool AuthenticateKey(string apikey)
+        public bool AuthenticateKey(string apikey, string clientname)
         {
             var today = DateTime.Today;
             bool isVerified = false;
@@ -165,6 +165,7 @@ namespace BalanceQueryAPI.DAL
                 {
                     command.CommandText = "usp_AuthenticateKey";
                     command.Parameters.AddWithValue("@apikey", apikey);
+                    command.Parameters.AddWithValue("@clientname", clientname);
 
                     var dt = GetData(command);
 

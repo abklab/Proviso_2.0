@@ -24,26 +24,36 @@ namespace BalanceQueryAPI.Configuration
             //}
 
             bool isValidKey = false;
-            IEnumerable<string> requestHeaders;
+            IEnumerable<string> requestHeaderKey;
+            IEnumerable<string> requestHeaderClient;
 
-            var checkHeaderKey = request.Headers.TryGetValues("CLIENT_ACCESS_APIKEY", out requestHeaders);
-
-
-            if (checkHeaderKey)
+            try
             {
-                string apikey = requestHeaders.FirstOrDefault();
-                var isActiveClient = services.AuthenticateKey(apikey);
-                if (isActiveClient)
-                    isValidKey = true;
+                var checkHeaderKey = request.Headers.TryGetValues("CLIENT_ACCESS_APIKEY", out requestHeaderKey);
+                var checkclientName = request.Headers.TryGetValues("API_CLIENT", out requestHeaderClient);
 
+                if (checkHeaderKey && checkclientName)
+                {
+                    string apikey = requestHeaderKey.FirstOrDefault();
+                    string clientname = requestHeaderClient.FirstOrDefault();
+                    var isActiveClient = services.AuthenticateKey(apikey, clientname);
+                    if (isActiveClient)
+                        isValidKey = true;
+
+                }
+                if (!isValidKey)
+                {
+                    return request.CreateResponse(System.Net.HttpStatusCode.Forbidden, "Something went wrong or Unauthorized Access. Contacting the Systems Admin.");
+                }
+
+                var response = await base.SendAsync(request, cancellationToken);
+                return response;
             }
-            if (!isValidKey)
+            catch (Exception ex)
             {
-                return request.CreateResponse(System.Net.HttpStatusCode.Forbidden, "You are NOT authorized to access this resource.");
+                var msg = ex.Message;
+                return request.CreateResponse(System.Net.HttpStatusCode.BadRequest, "Bad Request");
             }
-
-            var response = await base.SendAsync(request, cancellationToken);
-            return response;
         }
     }
 }
